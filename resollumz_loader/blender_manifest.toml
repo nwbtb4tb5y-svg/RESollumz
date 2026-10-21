@@ -1,0 +1,26 @@
+schema_version = "1.0.0"
+
+id = "resollumz_loader"
+version = "0.1.0"
+name = "RESollumz Loader"
+tagline = "Manage and load Sollumz releases"
+maintainer = "nwbtb4tb5y-svg"
+type = "add-on"
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+copyright = ["2026 nwbtb4tb5y-svg"]
+
+[permissions]
+files = "Install and manage local Sollumz releases"
+network = "Fetch metadata and download official Sollumz releases on request"
+
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    ".*",
+    ".git/",
+    "tests/",
+    "/*.zip",
+]
