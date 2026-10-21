@@ -77,6 +77,10 @@ def iter_submodules(path, package_name):
 
 def iter_submodule_names(path, root=""):
     for _, module_name, is_package in pkgutil.iter_modules([str(path)]):
+        # The independent loader manages Sollumz releases and is not part of this add-on's registration tree.
+        if module_name == "resollumz_loader":
+            continue
+
         yield root + module_name
         if is_package:
             if module_name == "tests":
