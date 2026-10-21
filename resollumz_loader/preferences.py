@@ -243,6 +243,7 @@ class RESOLLUMZ_OT_remove_release(Operator):
             self.report({"ERROR"}, "The active release cannot be removed. Activate another release and restart first.")
             return {"CANCELLED"}
         try:
+            runtime.remove_addon_preferences_entry(manager.module_name(tag))
             manager.remove_release(versions_root(), tag)
         except Exception as exc:
             _logger.exception("Could not remove Sollumz %s", tag)

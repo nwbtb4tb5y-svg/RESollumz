@@ -23,10 +23,28 @@ def ensure_addon_preferences_entry(module_name: str) -> None:
     import bpy
 
     addons = bpy.context.preferences.addons
-    if addons.get(module_name) is not None:
+    existing = addons.get(module_name)
+    if existing is not None:
         return
+    for candidate in list(addons):
+        if getattr(candidate, "module", None) == module_name:
+            return
     entry = addons.new()
     entry.module = module_name
+
+
+def remove_addon_preferences_entry(module_name: str) -> None:
+    import bpy
+
+    addons = bpy.context.preferences.addons
+    existing = addons.get(module_name)
+    if existing is not None:
+        addons.remove(existing)
+        return
+    for candidate in list(addons):
+        if getattr(candidate, "module", None) == module_name:
+            addons.remove(candidate)
+            return
 
 
 def activate_on_startup() -> None:
@@ -107,6 +125,7 @@ def deactivate() -> str:
     except Exception:
         _logger.exception("Could not cleanly unregister managed Sollumz %s", _active_tag)
         raise
+    remove_addon_preferences_entry(package_module_name)
     _remove_package_modules(package_module_name)
     module_parent = str(Path(_active_module.__file__).parent.parent)
     if module_parent in sys.path:

@@ -3,6 +3,7 @@ import io
 import json
 import sys
 import tempfile
+import types
 import unittest
 import zipfile
 from pathlib import Path
@@ -113,6 +114,34 @@ class ReleaseCatalogTests(unittest.TestCase):
 
         with mock.patch("resollumz_loader.core.github.urllib.request.urlopen", side_effect=fake_urlopen):
             self.assertEqual(github.download_release(release, "ghp_test_token"), b"archive-bytes")
+
+    def test_remove_addon_preferences_entry_removes_stale_managed_addon(self):
+        class FakeAddons(list):
+            def get(self, key):
+                for item in self:
+                    if getattr(item, "module", None) == key:
+                        return item
+                return None
+
+            def new(self):
+                entry = types.SimpleNamespace(module="")
+                self.append(entry)
+                return entry
+
+        addons = FakeAddons([
+            types.SimpleNamespace(module="resollumz_loader"),
+            types.SimpleNamespace(module=manager.module_name("v2.7.2")),
+        ])
+        fake_bpy = types.SimpleNamespace(
+            context=types.SimpleNamespace(
+                preferences=types.SimpleNamespace(addons=addons)
+            )
+        )
+
+        with mock.patch.dict(sys.modules, {"bpy": fake_bpy}):
+            runtime.remove_addon_preferences_entry(manager.module_name("v2.7.2"))
+
+        self.assertEqual([getattr(item, "module", None) for item in addons], ["resollumz_loader"])
 
 
 class ArchiveInstallationTests(unittest.TestCase):
