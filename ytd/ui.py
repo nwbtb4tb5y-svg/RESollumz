@@ -330,6 +330,16 @@ class SOLLUMZ_PT_txd_list_panel(TxdToolChildPanel, Panel):
         row.operator(txd_ops.SOLLUMZ_OT_export_ytd.bl_idname, icon="EXPORT")
 
         list_col.operator(txd_ops.SOLLUMZ_OT_txd_find_missing.bl_idname, icon="VIEWZOOM")
+        from ..sollumz_preferences import get_addon_preferences
+
+        if get_addon_preferences(context).cwbridge_enabled:
+            list_col.operator(txd_ops.SOLLUMZ_OT_txd_find_in_ytd_folder.bl_idname, icon="FILE_FOLDER")
+            shared = list_col.operator(
+                txd_ops.SOLLUMZ_OT_txd_find_in_ytd_folder.bl_idname,
+                text="Find in Shared Texture Folders",
+                icon="FILEBROWSER",
+            )
+            shared.use_shared_directories = True
 
 
 class SOLLUMZ_PT_txd_textures_panel(TxdToolChildPanel, Panel):
