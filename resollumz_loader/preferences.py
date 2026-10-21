@@ -49,8 +49,13 @@ class RESOLLUMZ_Preferences(AddonPreferences):
             state = {}
             jobs.state.message = str(exc)
             jobs.state.error = True
-        active = runtime.active_tag() or state.get("active_tag") or "None"
+        active = runtime.active_tag() or "None"
         layout.label(text=f"Active release: {active}")
+        if state.get("active_tag") and not runtime.active_tag():
+            layout.label(
+                text=f"Selected release on restart: {state['active_tag']}",
+                icon="INFO",
+            )
         box = layout.box()
         box.label(text="Installed releases")
         if installed:
@@ -243,8 +248,8 @@ class RESOLLUMZ_OT_remove_release(Operator):
             self.report({"ERROR"}, "The active release cannot be removed. Activate another release and restart first.")
             return {"CANCELLED"}
         try:
-            runtime.remove_addon_preferences_entry(manager.module_name(tag))
             manager.remove_release(versions_root(), tag)
+            runtime.remove_addon_preferences_entry(manager.module_name(tag))
         except Exception as exc:
             _logger.exception("Could not remove Sollumz %s", tag)
             self.report({"ERROR"}, str(exc))

@@ -13,6 +13,7 @@ from .paths import state_path, versions_root
 _logger = logging.getLogger("resollumz_loader.runtime")
 _active_module: ModuleType | None = None
 _active_tag: str | None = None
+_MANAGED_MODULE_PREFIX = "_resollumz_managed_sollumz_"
 
 
 def active_tag() -> str | None:
@@ -47,11 +48,30 @@ def remove_addon_preferences_entry(module_name: str) -> None:
             return
 
 
+def cleanup_stale_addon_preferences_entries() -> None:
+    import bpy
+
+    addons = bpy.context.preferences.addons
+    for entry in list(addons):
+        module_name = getattr(entry, "module", "")
+        if (
+            module_name.startswith(_MANAGED_MODULE_PREFIX)
+            and module_name not in sys.modules
+        ):
+            addons.remove(entry)
+
+
 def activate_on_startup() -> None:
     try:
         state = read_state(state_path())
         tag = state.get("active_tag")
         if not tag:
+            return
+        if _has_external_sollumz_instance():
+            _logger.info(
+                "Skipping managed Sollumz %s because another Sollumz add-on is already active.",
+                tag,
+            )
             return
         activate(tag, startup=True)
     except Exception as exc:
@@ -133,6 +153,20 @@ def deactivate() -> str:
     _active_module = None
     _active_tag = None
     return "Managed Sollumz was unregistered."
+
+
+def schedule_startup_activation() -> None:
+    import bpy
+
+    if not bpy.app.timers.is_registered(activate_on_startup):
+        bpy.app.timers.register(activate_on_startup, first_interval=1.0)
+
+
+def cancel_startup_activation() -> None:
+    import bpy
+
+    if bpy.app.timers.is_registered(activate_on_startup):
+        bpy.app.timers.unregister(activate_on_startup)
 
 
 def _load_package(module_name: str, package_path: Path, data_path: Path) -> ModuleType:

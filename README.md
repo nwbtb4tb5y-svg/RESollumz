@@ -43,7 +43,7 @@ RESollumz follows the Sollumz workflows, but some upstream wiki installation ste
 
 - Blender 4.2 or newer. The packaged release was validated with Blender 5.2.2.
 - Windows x64 to use the bundled CWBridge tools. The main extension package includes a self-contained CWBridge executable; a separate CodeWalker installation and .NET runtime are not required.
-- PyMateria, Sollumz's optional native dependency, is required to import converted binary resources into the Blender scene. CWBridge can convert XML to binary without PyMateria, but Blender cannot load that binary resource into the scene without it.
+- PyMateria, Sollumz's optional native dependency, is required for the usual native-binary import/export providers. The CodeWalker model importer instead converts `.ydr`, `.yft`, `.ydd`, and `.ytd` inputs to temporary CWXML and imports that XML through Sollumz.
 
 ### Install the RESollumz add-on
 
@@ -60,16 +60,22 @@ The Loader is a separate extension for downloading and managing official Sollumz
 1. Download `resollumz_loader-0.1.0.zip` from the same [release](https://github.com/nwbtb4tb5y-svg/RESollumz/releases/tag/v0.1.0).
 2. Install it with **Edit > Preferences > Get Extensions > Install from Disk**, then enable **RESollumz Loader**.
 3. Open the Loader preferences, allow network access if Blender asks, refresh the release list, and choose an official Sollumz release to install.
-4. The Loader cannot safely switch an already active Sollumz version in the current Blender process. Restart Blender to activate a different managed release. Do not enable a managed Sollumz release while another Sollumz/RESollumz add-on instance is active.
+4. The Loader cannot safely switch an already active Sollumz version in the current Blender process. Restart Blender to activate a different managed release. If RESollumz or another Sollumz add-on is enabled, the Loader skips automatic activation of its managed release to avoid registering two versions at once.
 
 ### Use the RESollumz features
 
-**Import CodeWalker XML into the scene**
+**Import CodeWalker models into the scene**
 
 1. Make sure **Enable CWBridge Features** is enabled in RESollumz preferences.
-2. Choose **File > Import > Import CodeWalker XML to Scene**.
-3. Select the CodeWalker XML file, choose its resource format (YDR, YFT, YDD, or YTD) when it is not encoded in the filename, and select **Gen9** only for GTA V Enhanced resources.
-4. Confirm the import. RESollumz converts the XML to a binary resource and passes it to the existing Sollumz importer. Referenced DDS files must be alongside the XML or in the asset-named subfolder produced by Sollumz. Importing the binary into Blender requires PyMateria.
+2. Choose **File > Import > Import CodeWalker Model to Scene**.
+3. Select the original `.ydr`, `.yft`, `.ydd`, or `.ytd` model and select **Gen9** only for GTA V Enhanced resources.
+4. RESollumz uses CWBridge to create temporary CodeWalker XML and imports it through Sollumz. No manual XML export or PyMateria binary-import step is needed; the temporary files are removed after import.
+
+**Export models as CodeWalker XML**
+
+1. Select the Sollumz model objects to export.
+2. Choose **File > Export > Export CodeWalker XML (.yft.xml)**.
+3. Select the output folder and the target game version. Sollumz writes CodeWalker XML files such as `model.yft.xml`; the existing model files are not overwritten.
 
 **Find textures in YTD dictionaries**
 

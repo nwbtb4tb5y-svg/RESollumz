@@ -19,14 +19,16 @@ def register():
     from . import preferences
 
     preferences.register()
+    runtime.cleanup_stale_addon_preferences_entries()
     runtime.ensure_addon_preferences_entry(__package__)
-    runtime.activate_on_startup()
+    runtime.schedule_startup_activation()
 
 
 def unregister():
     from . import preferences
 
     try:
+        runtime.cancel_startup_activation()
         runtime.deactivate()
     finally:
         preferences.unregister()

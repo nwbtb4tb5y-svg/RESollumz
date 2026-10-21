@@ -10,7 +10,13 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy.types import Operator
 from bpy_extras.io_utils import ImportHelper
 
-from .client import CWBridgeCancelled, CWBridgeError, convert_file, find_bridge_command
+from .client import (
+    CWBridgeCancelled,
+    CWBridgeError,
+    convert_file,
+    find_bridge_command,
+    resource_format_for_path,
+)
 from .xml_import import stage_xml_for_import
 
 
@@ -19,15 +25,15 @@ _SUPPORTED_FORMATS = {"ydr", "yft", "ydd", "ytd"}
 
 
 class SOLLUMZ_OT_cwbridge_import_xml(Operator, ImportHelper):
-    """Convert CodeWalker XML to a binary asset and import it into the current scene"""
+    """Import a CodeWalker model or XML file into the current scene"""
 
     bl_idname = "sollumz.cwbridge_import_xml"
-    bl_label = "Import CodeWalker XML to Scene"
+    bl_label = "Import CodeWalker Model to Scene"
     bl_options = {"UNDO"}
 
-    filename_ext = ".xml"
+    filename_ext = ""
     filter_glob: StringProperty(
-        default="*.xml",
+        default="*.ydr;*.yft;*.ydd;*.ytd;*.xml",
         options={"HIDDEN", "SKIP_SAVE"},
     )
     filepath: StringProperty(subtype="FILE_PATH")
@@ -43,7 +49,7 @@ class SOLLUMZ_OT_cwbridge_import_xml(Operator, ImportHelper):
     )
     gen9: BoolProperty(
         name="Gen9",
-        description="Read XML using the GTA V Enhanced resource format",
+        description="Use the GTA V Enhanced resource format",
         default=False,
     )
 
@@ -52,16 +58,24 @@ class SOLLUMZ_OT_cwbridge_import_xml(Operator, ImportHelper):
         self.layout.prop(self, "gen9")
 
     def execute(self, context):
-        xml_path = Path(bpy.path.abspath(self.filepath)).resolve()
-        if not xml_path.is_file() or xml_path.suffix.casefold() != ".xml":
-            self.report({"ERROR"}, "Select an existing CodeWalker XML file.")
+        input_path = Path(bpy.path.abspath(self.filepath)).resolve()
+        if not input_path.is_file():
+            self.report({"ERROR"}, "Select an existing CodeWalker model or XML file.")
             return {"CANCELLED"}
 
-        suffix_format = xml_path.stem.rpartition(".")[2].casefold()
-        format_name = suffix_format if suffix_format in _SUPPORTED_FORMATS else self.resource_format
-        if format_name not in _SUPPORTED_FORMATS:
-            self.report({"ERROR"}, "Supported XML resources are YDR, YFT, YDD, and YTD.")
-            return {"CANCELLED"}
+        is_binary_input = input_path.suffix.casefold() != ".xml"
+        if is_binary_input:
+            try:
+                format_name = resource_format_for_path(input_path)
+            except CWBridgeError as exc:
+                self.report({"ERROR"}, str(exc))
+                return {"CANCELLED"}
+        else:
+            suffix_format = input_path.stem.rpartition(".")[2].casefold()
+            format_name = suffix_format if suffix_format in _SUPPORTED_FORMATS else self.resource_format
+            if format_name not in _SUPPORTED_FORMATS:
+                self.report({"ERROR"}, "Supported XML resources are YDR, YFT, YDD, and YTD.")
+                return {"CANCELLED"}
 
         from ..sollumz_preferences import get_addon_preferences
 
@@ -69,12 +83,13 @@ class SOLLUMZ_OT_cwbridge_import_xml(Operator, ImportHelper):
         if not preferences.cwbridge_enabled:
             self.report({"ERROR"}, "Enable CWBridge Features in Sollumz preferences first.")
             return {"CANCELLED"}
-        from .. import dependencies
+        if not is_binary_input:
+            from .. import dependencies
 
-        if not dependencies.IS_SZIO_NATIVE_AVAILABLE:
-            message = dependencies.PYMATERIA_REQUIRED_MSG or "Binary resource formats require PyMateria."
-            self.report({"ERROR"}, message)
-            return {"CANCELLED"}
+            if not dependencies.IS_SZIO_NATIVE_AVAILABLE:
+                message = dependencies.PYMATERIA_REQUIRED_MSG or "Binary resource formats require PyMateria."
+                self.report({"ERROR"}, message)
+                return {"CANCELLED"}
         try:
             bridge_command = find_bridge_command(preferences.cwbridge_executable)
         except CWBridgeError as exc:
@@ -83,31 +98,45 @@ class SOLLUMZ_OT_cwbridge_import_xml(Operator, ImportHelper):
 
         executable_path = preferences.cwbridge_executable
         self._temp_directory = Path(tempfile.mkdtemp(prefix="resollumz-cwbridge-import-"))
-        base_name = xml_path.stem
+        base_name = input_path.stem
         if base_name.casefold().endswith(f".{format_name}"):
             base_name = base_name[:-(len(format_name) + 1)]
-        self._binary_path = self._temp_directory / f"{base_name}.{format_name}"
+        suffix = f".{format_name}.xml" if is_binary_input else f".{format_name}"
+        self._converted_path = self._temp_directory / f"{base_name}{suffix}"
+        self._is_xml_import = is_binary_input
+        self._input_name = input_path.name
+        self._format_name = format_name
         self._cancel_event = threading.Event()
         self._result_queue = queue.Queue()
-        input_path = xml_path
-        output_path = self._binary_path
+        output_path = self._converted_path
         cancel_event = self._cancel_event
         result_queue = self._result_queue
         temp_directory = self._temp_directory
         gen9 = self.gen9
 
-        def convert_xml():
+        def convert_input():
             try:
-                staged_xml_path = stage_xml_for_import(input_path, temp_directory, format_name)
-                convert_file(
-                    staged_xml_path,
-                    output_path,
-                    operation="from_xml",
-                    gen9=gen9,
-                    executable_path=executable_path,
-                    bridge_command=bridge_command,
-                    cancel_event=cancel_event,
-                )
+                if is_binary_input:
+                    convert_file(
+                        input_path,
+                        output_path,
+                        operation="to_xml",
+                        gen9=gen9,
+                        executable_path=executable_path,
+                        bridge_command=bridge_command,
+                        cancel_event=cancel_event,
+                    )
+                else:
+                    staged_xml_path = stage_xml_for_import(input_path, temp_directory, format_name)
+                    convert_file(
+                        staged_xml_path,
+                        output_path,
+                        operation="from_xml",
+                        gen9=gen9,
+                        executable_path=executable_path,
+                        bridge_command=bridge_command,
+                        cancel_event=cancel_event,
+                    )
             except Exception as exc:
                 if cancel_event.is_set():
                     shutil.rmtree(temp_directory, ignore_errors=True)
@@ -115,12 +144,12 @@ class SOLLUMZ_OT_cwbridge_import_xml(Operator, ImportHelper):
             else:
                 result_queue.put(output_path)
 
-        self._worker = threading.Thread(target=convert_xml, name="RESollumzXmlImport", daemon=True)
+        self._worker = threading.Thread(target=convert_input, name="RESollumzModelImport", daemon=True)
         self._worker.start()
         context.window_manager.progress_begin(0, 1)
         self._progress_active = True
         if context.workspace is not None:
-            context.workspace.status_text_set("Converting CodeWalker XML...")
+            context.workspace.status_text_set("Converting CodeWalker model...")
         self._timer = context.window_manager.event_timer_add(0.25, window=context.window)
         context.window_manager.modal_handler_add(self)
         return {"RUNNING_MODAL"}
@@ -128,7 +157,7 @@ class SOLLUMZ_OT_cwbridge_import_xml(Operator, ImportHelper):
     def modal(self, context, event):
         if event.type == "ESC":
             self._cancel_event.set()
-            self.report({"INFO"}, "Cancelling XML conversion...")
+            self.report({"INFO"}, "Cancelling CodeWalker conversion...")
             return {"RUNNING_MODAL"}
         if event.type != "TIMER" or self._worker.is_alive():
             return {"PASS_THROUGH"}
@@ -138,17 +167,29 @@ class SOLLUMZ_OT_cwbridge_import_xml(Operator, ImportHelper):
         if isinstance(result, Exception):
             self._remove_temp_directory()
             if isinstance(result, CWBridgeCancelled):
-                self.report({"INFO"}, "XML conversion cancelled.")
+                self.report({"INFO"}, "CodeWalker conversion cancelled.")
                 return {"CANCELLED"}
-            _logger.error("Could not convert CodeWalker XML: %s", result)
+            _logger.error("Could not convert CodeWalker model: %s", result)
             self.report({"ERROR"}, str(result))
             return {"CANCELLED"}
 
-        self._binary_path = result
+        import_path = result
+        if self._is_xml_import:
+            try:
+                import_path = stage_xml_for_import(
+                    result,
+                    self._temp_directory / "sollumz-import",
+                    self._format_name,
+                )
+            except (CWBridgeError, OSError) as exc:
+                _logger.error("Could not stage converted CodeWalker XML: %s", exc)
+                self._remove_temp_directory()
+                self.report({"ERROR"}, str(exc))
+                return {"CANCELLED"}
         try:
             import_result = bpy.ops.sollumz.import_assets(
-                directory=str(self._binary_path.parent),
-                files=[{"name": self._binary_path.name}],
+                directory=str(import_path.parent),
+                files=[{"name": import_path.name}],
             )
         except Exception as exc:
             self._remove_temp_directory()
@@ -157,9 +198,9 @@ class SOLLUMZ_OT_cwbridge_import_xml(Operator, ImportHelper):
             return {"CANCELLED"}
         self._remove_temp_directory()
         if import_result != {"FINISHED"}:
-            self.report({"ERROR"}, "Sollumz could not import the converted asset.")
+            self.report({"ERROR"}, "Sollumz could not import the converted CodeWalker model.")
             return {"CANCELLED"}
-        self.report({"INFO"}, f"Imported {self._binary_path.name}.")
+        self.report({"INFO"}, f"Imported {self._input_name}.")
         return {"FINISHED"}
 
     def cancel(self, context):

@@ -8,12 +8,25 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from cwbridge.client import CWBridgeCancelled, CWBridgeError, convert_file
+from cwbridge.client import (
+    CWBridgeCancelled,
+    CWBridgeError,
+    convert_file,
+    resource_format_for_path,
+)
 from cwbridge.ytd_index import IndexedTexture, choose_texture, index_ytd_directory
 from cwbridge.xml_import import stage_xml_for_import
 
 
 class BridgeClientTests(unittest.TestCase):
+    def test_recognizes_supported_binary_model_paths(self):
+        self.assertEqual(resource_format_for_path(Path("model.yft")), "yft")
+        self.assertEqual(resource_format_for_path(Path("MODEL.YDR")), "ydr")
+
+    def test_rejects_unsupported_binary_model_paths(self):
+        with self.assertRaisesRegex(CWBridgeError, "Supported formats"):
+            resource_format_for_path(Path("model.yds"))
+
     def test_returns_success_response(self):
         with tempfile.TemporaryDirectory() as temp:
             input_path = Path(temp) / "input.ytd"
@@ -174,6 +187,10 @@ class XmlImportStagingTests(unittest.TestCase):
 
             self.assertEqual(staged_xml.read_text(encoding="utf-8"), xml_path.read_text(encoding="utf-8"))
             self.assertEqual((staged_xml.parent / "diffuse.dds").read_bytes(), b"DDS fixture")
+            self.assertEqual(
+                (staged_xml.parent / "model" / "diffuse.dds").read_bytes(),
+                b"DDS fixture",
+            )
             self.assertFalse((staged_xml.parent / "shader.sps").exists())
 
     def test_rejects_texture_paths_escaping_xml_directory(self):

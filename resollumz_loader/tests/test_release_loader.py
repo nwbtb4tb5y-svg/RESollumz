@@ -143,6 +143,47 @@ class ReleaseCatalogTests(unittest.TestCase):
 
         self.assertEqual([getattr(item, "module", None) for item in addons], ["resollumz_loader"])
 
+    def test_cleanup_removes_only_stale_managed_addon_entries(self):
+        class FakeAddons(list):
+            def remove(self, entry):
+                super().remove(entry)
+
+        live_module_name = manager.module_name("v2.8.0")
+        stale_module_name = manager.module_name("v2.7.2")
+        addons = FakeAddons([
+            types.SimpleNamespace(module="resollumz"),
+            types.SimpleNamespace(module=live_module_name),
+            types.SimpleNamespace(module=stale_module_name),
+        ])
+        fake_bpy = types.SimpleNamespace(
+            context=types.SimpleNamespace(
+                preferences=types.SimpleNamespace(addons=addons)
+            )
+        )
+        live_module = types.ModuleType(live_module_name)
+
+        with mock.patch.dict(sys.modules, {
+            "bpy": fake_bpy,
+            live_module_name: live_module,
+        }):
+            runtime.cleanup_stale_addon_preferences_entries()
+
+        self.assertEqual(
+            [entry.module for entry in addons],
+            ["resollumz", live_module_name],
+        )
+
+    def test_startup_skips_managed_release_when_another_sollumz_is_active(self):
+        with (
+            mock.patch.object(runtime, "read_state", return_value={"active_tag": "v2.7.2"}),
+            mock.patch.object(runtime, "state_path"),
+            mock.patch.object(runtime, "_has_external_sollumz_instance", return_value=True),
+            mock.patch.object(runtime, "activate") as activate,
+        ):
+            runtime.activate_on_startup()
+
+        activate.assert_not_called()
+
 
 class ArchiveInstallationTests(unittest.TestCase):
     def test_versions_sort_by_semver(self):

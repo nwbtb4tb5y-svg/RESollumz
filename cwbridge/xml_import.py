@@ -21,6 +21,7 @@ def stage_xml_for_import(xml_path: Path, staging_directory: Path, resource_forma
     if asset_name.casefold().endswith(f".{resource_format}"):
         asset_name = asset_name[:-(len(resource_format) + 1)]
     asset_directory = xml_path.parent / asset_name
+    staged_asset_directory = staging_directory / asset_name
     staged_textures = set()
 
     for node in xml_root.iter("FileName"):
@@ -50,6 +51,8 @@ def stage_xml_for_import(xml_path: Path, staging_directory: Path, resource_forma
             raise CWBridgeError(f"Referenced texture file not found: {filename}")
 
         shutil.copy2(texture_path, staging_directory / filename)
+        staged_asset_directory.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(texture_path, staged_asset_directory / filename)
         staged_textures.add(filename)
 
     return staged_xml

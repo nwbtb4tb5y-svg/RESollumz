@@ -667,6 +667,29 @@ class SOLLUMZ_OT_export_assets(ExportAssetsOperatorImpl, Operator):
     bl_label = "Export RAGE Assets"
 
 
+class SOLLUMZ_OT_export_codewalker_xml(ExportAssetsOperatorImpl, Operator):
+    """Export selected Sollumz models as CodeWalker XML files"""
+
+    bl_idname = "sollumz.export_codewalker_xml"
+    bl_label = "Export CodeWalker XML"
+    sz_export_types = {"OBJECT"}
+
+    def invoke(self, context, event):
+        preferences = get_export_settings()
+        self.use_custom_settings = True
+        self.target_formats = {"CWXML"}
+        self.target_versions = set(preferences.target_versions)
+        self.limit_to_selected = preferences.limit_to_selected
+        self.apply_transforms = preferences.apply_transforms
+        self.exclude_skeleton = preferences.exclude_skeleton
+        self.mesh_domain = preferences.mesh_domain
+        return super().invoke(context, event)
+
+    def draw(self, _context):
+        self.layout.label(text="Export selected models as CodeWalker XML (.yft.xml).")
+        self.layout.prop(self, "target_versions", expand=True)
+
+
 class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, Operator):
     """Paint All Vertices Of Selected Object"""
     bl_idname = "sollumz.paint_vertices"
@@ -801,11 +824,13 @@ _MENU_LABEL = "RAGE Asset (.ydr, .ydd, .yft, .ybn, .ytyp, .ymap, .ycd, .y*.xml)"
 def sollumz_menu_func_import(self, context):
     self.layout.operator(SOLLUMZ_OT_import_assets.bl_idname, text=_MENU_LABEL)
     if get_addon_preferences(context).cwbridge_enabled:
-        self.layout.operator("sollumz.cwbridge_import_xml", text="Import CodeWalker XML to Scene")
+        self.layout.operator("sollumz.cwbridge_import_xml", text="Import CodeWalker Model to Scene")
 
 
 def sollumz_menu_func_export(self, context):
     self.layout.operator(SOLLUMZ_OT_export_assets.bl_idname, text=_MENU_LABEL)
+    if get_addon_preferences(context).cwbridge_enabled:
+        self.layout.operator("sollumz.export_codewalker_xml", text="Export CodeWalker XML (.yft.xml)")
 
 
 class SOLLUMZ_OT_copy_location(Operator):

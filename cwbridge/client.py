@@ -16,6 +16,18 @@ class CWBridgeCancelled(CWBridgeError):
     pass
 
 
+SUPPORTED_RESOURCE_FORMATS = frozenset({"ydr", "yft", "ydd", "ytd"})
+
+
+def resource_format_for_path(path: Path) -> str:
+    resource_format = path.suffix.lstrip(".").casefold()
+    if resource_format not in SUPPORTED_RESOURCE_FORMATS:
+        raise CWBridgeError(
+            f"Unsupported model format '{path.suffix}'. Supported formats: .ydr, .yft, .ydd, .ytd."
+        )
+    return resource_format
+
+
 def find_bridge_command(configured_path: str | None = None) -> list[str]:
     candidates = []
     if configured_path and configured_path.strip():

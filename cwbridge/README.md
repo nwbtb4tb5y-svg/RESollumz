@@ -63,6 +63,12 @@ Failure response:
 
 The process exits with status `0` on success and `1` on failure. Supported error codes include `invalid_json`, `invalid_request`, `invalid_operation`, `unsupported_format`, `invalid_input_format`, `invalid_output_format`, `input_not_found`, `output_exists`, `same_input_output`, `unsafe_texture_name`, `unsafe_export_path`, `export_collision` and `conversion_failed`.
 
+## Blender model workflow
+
+With **Enable CWBridge Features** enabled in RESollumz preferences, **File > Import > Import CodeWalker Model to Scene** accepts `.ydr`, `.yft`, `.ydd`, and `.ytd` files. CWBridge converts the selected model to temporary XML, then Sollumz imports the XML directly; no manually exported XML file is needed. Referenced textures are staged for the import and temporary data is removed afterward.
+
+For export, select the Sollumz model objects and choose **File > Export > Export CodeWalker XML (.yft.xml)**. This uses Sollumz's CWXML exporter to write CodeWalker-compatible XML files (for example, `model.yft.xml`) into the selected folder without replacing a binary model.
+
 ## Blender YTD lookup
 
 The YTD tool panel provides **Find Textures in YTD Folder**. Select a model with unresolved Sollumz texture samplers, choose a folder, and choose Gen8 or Gen9. The add-on scans `.ytd` files recursively, uses CWBridge to extract texture DDS files into Blender's user configuration cache, and links unambiguous name matches to the selected model's material samplers. A YTD whose name matches the model is preferred; `+hi` dictionaries are preferred within that match. Existing, packed, or non-file images are left unchanged, and ambiguous names are not linked automatically.
