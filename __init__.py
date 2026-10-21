@@ -13,14 +13,14 @@
 
 
 bl_info = {
-    "name": "Sollumz",
-    "author": "Skylumz, Colton and alexguirre",
-    "description": "Grand Theft Auto V modding suite for Blender",
-    "blender": (4, 0, 0),
-    "version": (2, 9, 0),
+    "name": "RESollumz",
+    "author": "nwbtb4tb5y-svg; based on Sollumz by Skylumz, Colton and alexguirre",
+    "description": "Experimental Sollumz fork with CodeWalker integration",
+    "blender": (4, 2, 0),
+    "version": (0, 1, 0),
     "category": "Import-Export",
-    "doc_url": "https://docs.sollumz.org/",
-    "tracker_url": "https://github.com/Sollumz/Sollumz/issues",
+    "doc_url": "https://github.com/nwbtb4tb5y-svg/RESollumz",
+    "tracker_url": "https://github.com/nwbtb4tb5y-svg/RESollumz/issues",
 }
 
 
