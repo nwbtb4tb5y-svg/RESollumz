@@ -94,11 +94,11 @@ def fetch_releases(token: str = "") -> list[dict]:
     raise ReleaseError("GitHub release list exceeded the pagination limit.")
 
 
-def download_release(release: dict) -> bytes:
+def download_release(release: dict, token: str = "") -> bytes:
     url = release.get("download_url")
     if not isinstance(url, str) or not _is_official_download_url(url):
         raise ReleaseError("Release download URL is not an approved GitHub HTTPS URL.")
-    request = urllib.request.Request(url, headers=_headers())
+    request = urllib.request.Request(url, headers=_headers(token))
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             if not _is_github_download_host(urlparse(response.geturl()).hostname):

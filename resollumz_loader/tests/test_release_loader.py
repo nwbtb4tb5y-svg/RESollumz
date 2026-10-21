@@ -6,6 +6,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 from resollumz_loader.core import github, manager, runtime
 
@@ -86,6 +87,32 @@ class ReleaseCatalogTests(unittest.TestCase):
         self.assertFalse(github._is_official_download_url(
             "https://github.com/attacker/Sollumz/releases/download/v2.9.0/Sollumz.zip"
         ))
+
+    def test_download_release_accepts_optional_token(self):
+        release = {"download_url": "https://github.com/Sollumz/Sollumz/releases/download/v2.9.0/Sollumz.zip"}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self, size):
+                return b"archive-bytes"
+
+            def geturl(self):
+                return release["download_url"]
+
+        def fake_urlopen(request, timeout):
+            auth = request.headers.get("Authorization", "")
+            self.assertTrue(auth.startswith("Bearer "))
+            self.assertIn("ghp_test_token", auth)
+            self.assertEqual(timeout, 60)
+            return FakeResponse()
+
+        with mock.patch("resollumz_loader.core.github.urllib.request.urlopen", side_effect=fake_urlopen):
+            self.assertEqual(github.download_release(release, "ghp_test_token"), b"archive-bytes")
 
 
 class ArchiveInstallationTests(unittest.TestCase):
