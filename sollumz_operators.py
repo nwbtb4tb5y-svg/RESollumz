@@ -800,6 +800,8 @@ _MENU_LABEL = "RAGE Asset (.ydr, .ydd, .yft, .ybn, .ytyp, .ymap, .ycd, .y*.xml)"
 
 def sollumz_menu_func_import(self, context):
     self.layout.operator(SOLLUMZ_OT_import_assets.bl_idname, text=_MENU_LABEL)
+    if get_addon_preferences(context).cwbridge_enabled:
+        self.layout.operator("sollumz.cwbridge_import_xml", text="Import CodeWalker XML to Scene")
 
 
 def sollumz_menu_func_export(self, context):
