@@ -1,23 +1,42 @@
 schema_version = "1.0.0"
 
-id = "sollumz_dev"
-version = "2.9.0-dev+$Format:%h$"
-name = "Sollumz (Development)"
-tagline = "Grand Theft Auto V modding suite for Blender"
-maintainer = "alexguirre <alexguirre.aa@gmail.com>"
+id = "resollumz"
+version = "0.1.0"
+name = "RESollumz"
+tagline = "Experimental Sollumz fork with CodeWalker integration"
+maintainer = "nwbtb4tb5y-svg"
 type = "add-on"
 
-website = "https://docs.sollumz.org"
+website = "https://github.com/nwbtb4tb5y-svg/RESollumz"
 
 tags = ["Import-Export"]
 
 blender_version_min = "4.2.0"
+platforms = ["windows-x64"]
 
 license = ["SPDX:GPL-3.0-or-later"]
 copyright = ["2020-2025 Skylumz, Colton and alexguirre"]
 
 [permissions]
-files = "Import/export RAGE asset files. Save/load presets."
-clipboard = "Copy/paste location and rotation of objects."
-network = "Install dependencies."
+files = "Import and export RAGE asset files; save and load presets"
+clipboard = "Copy and paste object location and rotation"
+network = "Install dependencies"
 
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    ".*",
+    ".git/",
+    ".github/",
+    ".venv/",
+    "/*.zip",
+    "*.blend[1-9]",
+    "*.pdb",
+    "RECodeWalker/",
+    "resollumz_loader/",
+    "tests/",
+    "cwbridge/bin/",
+    "cwbridge/obj/",
+    "cwbridge/tests/",
+    "PROGRESS.md",
+]
