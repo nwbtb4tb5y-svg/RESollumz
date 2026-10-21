@@ -1037,6 +1037,18 @@ class SollumzAddonPreferences(AddonPreferences):
         name="Selected Shared Textures Directory",
         min=0
     )
+    cwbridge_enabled: BoolProperty(
+        name="Enable CWBridge Features",
+        description="Enable CodeWalker XML import and YTD texture lookup tools",
+        default=True,
+        update=_save_preferences_on_update,
+    )
+    cwbridge_executable: StringProperty(
+        name="CWBridge Executable",
+        description="Path to the built CWBridge executable or CWBridge.dll",
+        subtype="FILE_PATH",
+        update=_save_preferences_on_update,
+    )
 
     shared_assets_directories: CollectionProperty(
         name="Game Asset Libraries",
@@ -1366,6 +1378,10 @@ class SollumzAddonPreferences(AddonPreferences):
         _section_header(box, text="Textures", first=True)
         col = box.column(align=True)
         col.prop(settings, "textures_mode", text="Mode")
+        col.prop(self, "cwbridge_enabled")
+        bridge_row = col.row()
+        bridge_row.enabled = self.cwbridge_enabled
+        bridge_row.prop(self, "cwbridge_executable")
         if settings.textures_mode == "CUSTOM_DIR":
             split = col.split(factor=0.4)
             row = split.row()
