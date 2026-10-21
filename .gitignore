@@ -15,3 +15,7 @@ coverage.xml
 .coverage
 offline_index/
 .blend1
+/cwbridge/bin/
+/cwbridge/obj/
+/cwbridge/publish/
+/dist/
