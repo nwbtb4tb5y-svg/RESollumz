@@ -173,4 +173,4 @@ Escopo e ordem definidos pelo usuário:
 - Pacote principal `dist/resollumz-0.1.0.zip`: 35.974.145 bytes; SHA-256 `80E7FDE6D6E1A2AB323A965E1C4CE1AA1CB69EDA1D238C5357A8D1788A2839C6`.
 - Pacote Loader `dist/resollumz_loader-0.1.0.zip`: 13.188 bytes; SHA-256 `946F598B6D51B8509EA72838CCC0E885A94377B09536C2A305AF340AFE74CF06`.
 - Os pacotes ficam em `dist/`, ignorado pelo Git. Remover os ZIPs existentes antes de reconstruí-los: o comando do Blender pode acrescentar o novo conteúdo ao arquivo anterior.
-- Documentação e empacotamento local estão concluídos. Commits e tag locais ainda serão preparados; nenhum push ou release público foi feito, aguardando confirmação explícita.
+- Documentação, empacotamento, 41 commits locais por arquivo (com `.gitmodules` e gitlink juntos) e a tag anotada local `v0.1.0` (“RESollumz Prototype”) estão preparados. Nenhum push ou release público foi feito; a publicação aguarda confirmação explícita.
