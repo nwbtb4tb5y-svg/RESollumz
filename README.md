@@ -1,4 +1,40 @@
-# Sollumz
+# RESollumz Prototype
+
+RESollumz is an experimental Sollumz fork for Blender, maintained by `nwbtb4tb5y-svg`. It preserves the upstream Sollumz workflow and adds an independent release loader and optional CodeWalker integration.
+
+This prototype is based on [Sollumz](https://github.com/Sollumz/Sollumz), by Skylumz, Colton Fox and alexguirre. See [LICENSE](./LICENSE) for the project license and attribution.
+
+## Build and package
+
+Clone with `git clone --recurse-submodules` or initialize the CodeWalker dependency in an existing checkout with `git submodule update --init --recursive`. The CWBridge project requires the .NET 8 SDK; run `.\cwbridge\publish.ps1` to publish its self-contained Windows x64 executable and copy its third-party notices. With Blender 5.2.2 available on `PATH`, build the installable packages from the repository root:
+
+```powershell
+New-Item -ItemType Directory -Path .\dist -Force | Out-Null
+Remove-Item -LiteralPath .\dist\resollumz-0.1.0.zip,.\dist\resollumz_loader-0.1.0.zip -Force -ErrorAction SilentlyContinue
+blender --command extension build --source-dir . --output-dir dist
+blender --command extension build --source-dir .\resollumz_loader --output-dir dist
+```
+
+The existing ZIPs are removed before rebuilding because Blender's extension builder appends to an output archive if it already exists. The main extension package targets Windows x64 because it bundles CWBridge. The loader is a separate, platform-independent package. See [CWBridge third-party notices](./cwbridge/THIRD_PARTY_NOTICES.md) for bundled dependency attributions.
+
+## RESollumz additions
+
+- **RESollumz Loader** (`resollumz_loader/`) installs and selects official Sollumz releases side by side. Switching an already active release requires restarting Blender.
+- **CWBridge** converts loose YDR, YFT, YDD and YTD resources between binary and CodeWalker XML formats.
+- The Blender import menu can convert CodeWalker XML to binary and pass the result to the existing Sollumz importer.
+- The Texture Dictionaries panel can find matching textures in selected YTD folders or shared texture directories, with Gen8/Gen9 selection, a persistent extraction cache, progress and cancellation.
+
+CWBridge integration is controlled by **Enable CWBridge Features** in Sollumz Preferences. The self-contained Windows x64 bridge is bundled with the prototype package. Importing binary resources into Blender also requires the optional PyMateria dependency; the bridge conversion alone does not install PyMateria.
+
+See [cwbridge/README.md](./cwbridge/README.md) for bridge setup, protocol and YTD lookup details, and [resollumz_loader/README.md](./resollumz_loader/README.md) for loader behavior and compatibility.
+
+## Prototype limitations
+
+- The checked-in fixtures cover Gen8/Gen9 YDR, cloth YFT and YTD, but do not include YDD or vehicle YFT resources.
+- Blender validation was performed on 5.2.2; Blender 4.2 and interactive UI workflows still need manual testing.
+- CodeWalker round-trips preserve tested model, geometry, shader and texture counts but normalize some shader parameters and shader-name hashes; they are not byte-identical.
+- The loader requires a Blender restart to switch an active release safely.
+
 Blender plugin to import, export, or create GTA V assets.
 
 By Skylumz, Colton Fox and alexguirre.
@@ -33,7 +69,7 @@ See the [wiki](https://docs.sollumz.org/) to get started. Make sure to read the 
   * Dynamic prop creation/editing
 
 ## Requirements ##
-  * [Blender 4.0 or newer](http://www.blender.org/download/)
+  * [Blender 4.2 or newer](http://www.blender.org/download/)
   * Recommended: latest CodeWalker release from [their discord](https://discord.gg/codewalker)
 
 ## Installation ##
