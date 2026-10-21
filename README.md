@@ -35,18 +35,53 @@ See [cwbridge/README.md](./cwbridge/README.md) for bridge setup, protocol and YT
 - CodeWalker round-trips preserve tested model, geometry, shader and texture counts but normalize some shader parameters and shader-name hashes; they are not byte-identical.
 - The loader requires a Blender restart to switch an active release safely.
 
-Blender plugin to import, export, or create GTA V assets.
+## Installation and getting started
 
-By Skylumz, Colton Fox and alexguirre.
+RESollumz follows the Sollumz workflows, but some upstream wiki installation steps do not apply to this fork. Keep the original [Sollumz wiki](https://docs.sollumz.org/) for general modeling and asset-authoring guidance; use the fork-specific instructions below to install and use RESollumz features.
 
-## Join our Discord
-Join the Sollumz [discord server](https://discord.sollumz.org/) to ask questions and chat with the community!
-## Using the plugin
-See the [wiki](https://docs.sollumz.org/) to get started. Make sure to read the wiki before posting an issue or asking questions! Also, see the Tutorials and Resources channel on the Discord server.
+### Requirements
 
-**Note:** The issue tracker should be for bug reports and feature requests only. If you are having an issue and you are not sure if it is a bug or not, ask on the Discord server first!
+- Blender 4.2 or newer. The packaged release was validated with Blender 5.2.2.
+- Windows x64 to use the bundled CWBridge tools. The main extension package includes a self-contained CWBridge executable; a separate CodeWalker installation and .NET runtime are not required.
+- PyMateria, Sollumz's optional native dependency, is required to import converted binary resources into the Blender scene. CWBridge can convert XML to binary without PyMateria, but Blender cannot load that binary resource into the scene without it.
 
-## Features ##
+### Install the RESollumz add-on
+
+1. Download `resollumz-0.1.0.zip` from the [RESollumz Prototype release](https://github.com/nwbtb4tb5y-svg/RESollumz/releases/tag/v0.1.0). Keep the ZIP intact; do not extract it.
+2. In Blender, open **Edit > Preferences > Get Extensions** and choose **Install from Disk**.
+3. Select the downloaded ZIP. Find **RESollumz** in the installed extensions list and enable it.
+4. If the upstream Sollumz add-on is already enabled, disable it and restart Blender before enabling RESollumz. The two add-ons register overlapping Blender types and should not be active together.
+5. To enable CodeWalker tools, open **Edit > Preferences > Add-ons > RESollumz**, expand the **Import** settings, and leave **Enable CWBridge Features** enabled. The released Windows package already includes CWBridge, so the **CWBridge Executable** path can normally be left blank.
+
+### Optional: install RESollumz Loader
+
+The Loader is a separate extension for downloading and managing official Sollumz releases; it is not required to use the RESollumz add-on.
+
+1. Download `resollumz_loader-0.1.0.zip` from the same [release](https://github.com/nwbtb4tb5y-svg/RESollumz/releases/tag/v0.1.0).
+2. Install it with **Edit > Preferences > Get Extensions > Install from Disk**, then enable **RESollumz Loader**.
+3. Open the Loader preferences, allow network access if Blender asks, refresh the release list, and choose an official Sollumz release to install.
+4. The Loader cannot safely switch an already active Sollumz version in the current Blender process. Restart Blender to activate a different managed release. Do not enable a managed Sollumz release while another Sollumz/RESollumz add-on instance is active.
+
+### Use the RESollumz features
+
+**Import CodeWalker XML into the scene**
+
+1. Make sure **Enable CWBridge Features** is enabled in RESollumz preferences.
+2. Choose **File > Import > Import CodeWalker XML to Scene**.
+3. Select the CodeWalker XML file, choose its resource format (YDR, YFT, YDD, or YTD) when it is not encoded in the filename, and select **Gen9** only for GTA V Enhanced resources.
+4. Confirm the import. RESollumz converts the XML to a binary resource and passes it to the existing Sollumz importer. Referenced DDS files must be alongside the XML or in the asset-named subfolder produced by Sollumz. Importing the binary into Blender requires PyMateria.
+
+**Find textures in YTD dictionaries**
+
+1. Select the model or models whose Sollumz texture samplers have missing images.
+2. In the 3D Viewport, open the **Sollumz Tools** sidebar tab (press **N** if the sidebar is hidden) and expand **Texture Dictionaries**.
+3. Choose **Find Textures in YTD Folder** to select a folder, or **Find in Shared Texture Folders** to search the shared texture directories configured in RESollumz preferences.
+4. Select **Gen9** only when the YTD files are from GTA V Enhanced. Optionally enable **Reindex YTD Files** to extract the dictionaries again instead of reusing valid cache entries. For a selected folder, **Search Subfolders** controls recursive scanning.
+5. Wait for indexing to finish. Matching, unambiguous textures are linked automatically; existing images are preserved and ambiguous matches are skipped. Progress and per-dictionary errors are reported in Blender.
+
+Normal Sollumz import, export, and asset-editing workflows remain available. The original [Sollumz wiki](https://docs.sollumz.org/) and [Discord server](https://discord.sollumz.org/) provide general community guidance, but use this README and the [CWBridge guide](./cwbridge/README.md) for RESollumz-specific setup and behavior.
+
+## Features
 
 **Supported Formats**
   * YDD
@@ -67,14 +102,6 @@ See the [wiki](https://docs.sollumz.org/) to get started. Make sure to read the 
   * Shader editing
   * Vehicle creation/editing
   * Dynamic prop creation/editing
-
-## Requirements ##
-  * [Blender 4.2 or newer](http://www.blender.org/download/)
-  * Recommended: latest CodeWalker release from [their discord](https://discord.gg/codewalker)
-
-## Installation ##
-
-Follow the [installation instructions on our wiki](https://docs.sollumz.org/getting-started/installation).
 
 ---
 
