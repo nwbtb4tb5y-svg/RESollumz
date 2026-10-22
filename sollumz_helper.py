@@ -180,7 +180,7 @@ def get_sollumz_materials(
             mats = lod_mesh.materials
 
             for mat in mats:
-                if mat.sollum_type != MaterialType.SHADER:
+                if mat is None or mat.sollum_type != MaterialType.SHADER:
                     continue
 
                 if mat not in used_materials:
