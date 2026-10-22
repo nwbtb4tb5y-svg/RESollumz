@@ -787,11 +787,11 @@ class SOLLUMZ_OT_export_codewalker_yft(ExportAssetsOperatorImpl, Operator, Expor
                 )
                 backup_path = replace_file_with_backup(target_path, converted_path)
         except (CWBridgeError, OSError) as exc:
-            logger.error("Could not export and replace CodeWalker YFT: %s", exc)
+            logger.error(f"Could not export and replace CodeWalker YFT: {exc}")
             self.report({"ERROR"}, str(exc))
             return {"CANCELLED"}
 
-        logger.info("Replaced '%s'; original backed up at '%s'.", target_path, backup_path)
+        logger.info(f"Replaced '{target_path}'; original backed up at '{backup_path}'.")
         self.report({"INFO"}, "YFT updated. Original backup created.")
         return {"FINISHED"}
 
