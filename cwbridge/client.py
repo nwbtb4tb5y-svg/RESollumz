@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -26,6 +27,58 @@ def resource_format_for_path(path: Path) -> str:
             f"Unsupported model format '{path.suffix}'. Supported formats: .ydr, .yft, .ydd, .ytd."
         )
     return resource_format
+
+
+def replace_file_with_backup(target_path: Path, replacement_path: Path) -> Path:
+    target_path = target_path.resolve()
+    replacement_path = replacement_path.resolve()
+    if target_path == replacement_path:
+        raise CWBridgeError("The replacement file must be different from the original.")
+    if not target_path.is_file():
+        raise CWBridgeError(f"Original model file does not exist: {target_path}")
+    if not replacement_path.is_file():
+        raise CWBridgeError(f"Converted model file does not exist: {replacement_path}")
+    if replacement_path.stat().st_size == 0:
+        raise CWBridgeError("Converted model file is empty.")
+
+    backup_path = target_path.with_suffix(target_path.suffix + ".backup")
+    if backup_path.exists():
+        raise CWBridgeError(f"Backup already exists; refusing to overwrite it: {backup_path}")
+
+    backup_temp = None
+    replacement_temp = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=f".{target_path.name}.",
+            suffix=".backup.tmp",
+            dir=target_path.parent,
+            delete=False,
+        ) as stream:
+            backup_temp = Path(stream.name)
+        shutil.copy2(target_path, backup_temp)
+        os.link(backup_temp, backup_path)
+        backup_temp.unlink()
+        backup_temp = None
+
+        with tempfile.NamedTemporaryFile(
+            prefix=f".{target_path.name}.",
+            suffix=".replacement.tmp",
+            dir=target_path.parent,
+            delete=False,
+        ) as stream:
+            replacement_temp = Path(stream.name)
+        shutil.copyfile(replacement_path, replacement_temp)
+        os.replace(replacement_temp, target_path)
+        replacement_temp = None
+    except OSError as exc:
+        backup_note = f" The original backup is available at {backup_path}." if backup_path.exists() else ""
+        raise CWBridgeError(f"Could not replace the model file: {exc}.{backup_note}") from exc
+    finally:
+        for temporary_path in (backup_temp, replacement_temp):
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+
+    return backup_path
 
 
 def find_bridge_command(configured_path: str | None = None) -> list[str]:

@@ -12,9 +12,11 @@ from bpy.props import (
 )
 import time
 import re
+import tempfile
 from pathlib import Path
 from typing import Literal
 from mathutils import Quaternion
+from bpy_extras.io_utils import ExportHelper
 from .sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, TimeFlagsMixin
 from .sollumz_preferences import get_addon_preferences, get_import_settings, get_export_settings, ImportSettingsBase, ExportSettingsBase
@@ -690,6 +692,110 @@ class SOLLUMZ_OT_export_codewalker_xml(ExportAssetsOperatorImpl, Operator):
         self.layout.prop(self, "target_versions", expand=True)
 
 
+class SOLLUMZ_OT_export_codewalker_yft(ExportAssetsOperatorImpl, Operator, ExportHelper):
+    """Rebuild an existing YFT from the selected Sollumz fragment"""
+
+    bl_idname = "sollumz.export_codewalker_yft"
+    bl_label = "Export YFT via CodeWalker (with backup)"
+    sz_export_types = {"OBJECT"}
+
+    filename_ext = ".yft"
+    filter_glob: bpy.props.StringProperty(
+        default="*.yft",
+        options={"HIDDEN", "SKIP_SAVE"},
+    )
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+    gen9: BoolProperty(
+        name="Gen9",
+        description="Use the GTA V Enhanced resource format",
+        default=False,
+    )
+
+    def invoke(self, context, event):
+        preferences = get_export_settings()
+        self.use_custom_settings = True
+        self.target_formats = {"CWXML"}
+        self.gen9 = "GEN9" in preferences.target_versions
+        self.target_versions = {"GEN9" if self.gen9 else "GEN8"}
+        self.limit_to_selected = True
+        self.apply_transforms = preferences.apply_transforms
+        self.exclude_skeleton = preferences.exclude_skeleton
+        self.mesh_domain = preferences.mesh_domain
+        return super().invoke(context, event)
+
+    def draw(self, _context):
+        self.layout.label(text="Replace an existing YFT with the selected fragment.")
+        self.layout.label(text="A .backup copy of the original file will be kept.")
+        self.layout.prop(self, "gen9")
+
+    def execute_timed(self, context: Context):
+        from .cwbridge.client import (
+            CWBridgeError,
+            convert_file,
+            find_bridge_command,
+            replace_file_with_backup,
+        )
+
+        target_path = Path(bpy.path.abspath(self.filepath)).resolve()
+        if target_path.suffix.casefold() != ".yft" or not target_path.is_file():
+            self.report({"ERROR"}, "Select an existing .yft file to replace.")
+            return {"CANCELLED"}
+
+        backup_path = target_path.with_suffix(target_path.suffix + ".backup")
+        if backup_path.exists():
+            self.report({"ERROR"}, f"Backup already exists; refusing to overwrite it: {backup_path}")
+            return {"CANCELLED"}
+
+        objects = _collect_objects_for_export(context, True)
+        if len(objects) != 1 or objects[0].sollum_type != SollumType.FRAGMENT:
+            self.report({"ERROR"}, "Select exactly one Sollumz Fragment to export as a YFT.")
+            return {"CANCELLED"}
+
+        preferences = get_addon_preferences(context)
+        if not preferences.cwbridge_enabled:
+            self.report({"ERROR"}, "Enable CWBridge Features in Sollumz preferences first.")
+            return {"CANCELLED"}
+        try:
+            bridge_command = find_bridge_command(preferences.cwbridge_executable)
+        except CWBridgeError as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
+
+        try:
+            with tempfile.TemporaryDirectory(prefix="resollumz-cwbridge-yft-") as temporary_directory:
+                temporary_path = Path(temporary_directory)
+                self.directory = str(temporary_path)
+                self.target_versions = {"GEN9" if self.gen9 else "GEN8"}
+                result = super().execute_timed(context)
+                if "CANCELLED" in result:
+                    return result
+
+                xml_files = list(temporary_path.rglob("*.yft.xml"))
+                if len(xml_files) != 1 or not xml_files[0].is_file():
+                    raise CWBridgeError(
+                        f"Expected one exported YFT XML file, found {len(xml_files)}."
+                    )
+
+                converted_path = temporary_path / "converted.yft"
+                convert_file(
+                    xml_files[0],
+                    converted_path,
+                    operation="from_xml",
+                    gen9=self.gen9,
+                    include_textures=True,
+                    bridge_command=bridge_command,
+                )
+                backup_path = replace_file_with_backup(target_path, converted_path)
+        except (CWBridgeError, OSError) as exc:
+            logger.error("Could not export and replace CodeWalker YFT: %s", exc)
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
+
+        logger.info("Replaced '%s'; original backed up at '%s'.", target_path, backup_path)
+        self.report({"INFO"}, "YFT updated. Original backup created.")
+        return {"FINISHED"}
+
+
 class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, Operator):
     """Paint All Vertices Of Selected Object"""
     bl_idname = "sollumz.paint_vertices"
@@ -831,6 +937,10 @@ def sollumz_menu_func_export(self, context):
     self.layout.operator(SOLLUMZ_OT_export_assets.bl_idname, text=_MENU_LABEL)
     if get_addon_preferences(context).cwbridge_enabled:
         self.layout.operator("sollumz.export_codewalker_xml", text="Export CodeWalker XML (.yft.xml)")
+        self.layout.operator(
+            SOLLUMZ_OT_export_codewalker_yft.bl_idname,
+            text="Export YFT via CodeWalker (with backup)",
+        )
 
 
 class SOLLUMZ_OT_copy_location(Operator):

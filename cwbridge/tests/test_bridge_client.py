@@ -12,6 +12,7 @@ from cwbridge.client import (
     CWBridgeCancelled,
     CWBridgeError,
     convert_file,
+    replace_file_with_backup,
     resource_format_for_path,
 )
 from cwbridge.ytd_index import IndexedTexture, choose_texture, index_ytd_directory
@@ -19,6 +20,53 @@ from cwbridge.xml_import import stage_xml_for_import
 
 
 class BridgeClientTests(unittest.TestCase):
+    def test_replaces_model_and_keeps_original_backup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            original = root / "model.yft"
+            replacement = root / "converted.yft"
+            original.write_bytes(b"original")
+            replacement.write_bytes(b"converted")
+
+            backup = replace_file_with_backup(original, replacement)
+
+            self.assertEqual(original.read_bytes(), b"converted")
+            self.assertEqual(backup, (root / "model.yft.backup").resolve())
+            self.assertEqual(backup.read_bytes(), b"original")
+
+    def test_refuses_to_overwrite_an_existing_backup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            original = root / "model.yft"
+            replacement = root / "converted.yft"
+            backup = root / "model.yft.backup"
+            original.write_bytes(b"original")
+            replacement.write_bytes(b"converted")
+            backup.write_bytes(b"existing backup")
+
+            with self.assertRaisesRegex(CWBridgeError, "Backup already exists"):
+                replace_file_with_backup(original, replacement)
+
+            self.assertEqual(original.read_bytes(), b"original")
+            self.assertEqual(backup.read_bytes(), b"existing backup")
+
+    def test_preserves_original_if_replacement_fails(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            original = root / "model.yft"
+            replacement = root / "converted.yft"
+            backup = root / "model.yft.backup"
+            original.write_bytes(b"original")
+            replacement.write_bytes(b"converted")
+
+            with patch("cwbridge.client.os.replace", side_effect=OSError("replace failed")):
+                with self.assertRaisesRegex(CWBridgeError, "backup is available"):
+                    replace_file_with_backup(original, replacement)
+
+            self.assertEqual(original.read_bytes(), b"original")
+            self.assertEqual(backup.read_bytes(), b"original")
+            self.assertEqual(replacement.read_bytes(), b"converted")
+
     def test_recognizes_supported_binary_model_paths(self):
         self.assertEqual(resource_format_for_path(Path("model.yft")), "yft")
         self.assertEqual(resource_format_for_path(Path("MODEL.YDR")), "ydr")

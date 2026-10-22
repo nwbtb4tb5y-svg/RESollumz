@@ -69,6 +69,8 @@ With **Enable CWBridge Features** enabled in RESollumz preferences, **File > Imp
 
 For export, select the Sollumz model objects and choose **File > Export > Export CodeWalker XML (.yft.xml)**. This uses Sollumz's CWXML exporter to write CodeWalker-compatible XML files (for example, `model.yft.xml`) into the selected folder without replacing a binary model.
 
+To rebuild an existing fragment file directly, select exactly one Sollumz Fragment and choose **File > Export > Export YFT via CodeWalker (with backup)**. Select the existing `.yft` file and its generation. RESollumz exports temporary CWXML, converts it to a binary YFT through CWBridge, and replaces the selected file only after conversion succeeds. The original is preserved as `filename.yft.backup`; an existing backup is never overwritten. This direct replacement workflow is for YFT fragments only.
+
 ## Blender YTD lookup
 
 The YTD tool panel provides **Find Textures in YTD Folder**. Select a model with unresolved Sollumz texture samplers, choose a folder, and choose Gen8 or Gen9. The add-on scans `.ytd` files recursively, uses CWBridge to extract texture DDS files into Blender's user configuration cache, and links unambiguous name matches to the selected model's material samplers. A YTD whose name matches the model is preferred; `+hi` dictionaries are preferred within that match. Existing, packed, or non-file images are left unchanged, and ambiguous names are not linked automatically.

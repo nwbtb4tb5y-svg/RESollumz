@@ -6,6 +6,20 @@ _TRANSLATIONS = {
         ("*", "Enable CWBridge Features"): "Ativar recursos do CWBridge",
         ("*", "Import CodeWalker Model to Scene"): "Importar modelo do CodeWalker para a cena",
         ("*", "Export CodeWalker XML (.yft.xml)"): "Exportar XML do CodeWalker (.yft.xml)",
+        ("*", "Export YFT via CodeWalker (with backup)"):
+            "Exportar YFT pelo CodeWalker (com backup)",
+        ("*", "Replace an existing YFT with the selected Sollumz fragment."):
+            "Substituir um YFT existente pelo fragmento Sollumz selecionado.",
+        ("*", "A .backup copy of the original file will be kept."):
+            "Uma cópia .backup do arquivo original será mantida.",
+        ("*", "Select an existing .yft file to replace."):
+            "Selecione um arquivo .yft existente para substituir.",
+        ("*", "Select exactly one Sollumz Fragment to export as a YFT."):
+            "Selecione exatamente um fragmento Sollumz para exportar como YFT.",
+        ("*", "YFT updated. Original backup created."):
+            "YFT atualizado. Backup original criado.",
+        ("*", "Expected one exported YFT XML file, found {}."):
+            "Era esperado um XML YFT exportado, mas foram encontrados {}.",
         ("*", "Import a CodeWalker model or XML file into the current scene"):
             "Importar um modelo ou arquivo XML do CodeWalker para a cena atual",
         ("*", "Export selected models as CodeWalker XML (.yft.xml)."):

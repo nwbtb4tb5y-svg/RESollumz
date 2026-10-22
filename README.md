@@ -77,6 +77,12 @@ The Loader is a separate extension for downloading and managing official Sollumz
 2. Choose **File > Export > Export CodeWalker XML (.yft.xml)**.
 3. Select the output folder and the target game version. Sollumz writes CodeWalker XML files such as `model.yft.xml`; the existing model files are not overwritten.
 
+**Replace a YFT using CodeWalker**
+
+1. Select exactly one Sollumz Fragment and choose **File > Export > Export YFT via CodeWalker (with backup)**.
+2. Choose the existing `.yft` file to replace and select Gen8 or Gen9.
+3. RESollumz exports temporary CWXML, converts it to a binary YFT through CWBridge, then replaces the chosen file only after conversion succeeds. The original is kept as `filename.yft.backup`; an existing backup is never overwritten.
+
 **Find textures in YTD dictionaries**
 
 1. Select the model or models whose Sollumz texture samplers have missing images.
